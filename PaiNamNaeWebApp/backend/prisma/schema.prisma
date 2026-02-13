@@ -89,10 +89,15 @@ model User {
   createdRoutes         Route[]             @relation("DriverRoutes")
   bookings              Booking[]           @relation("PassengerBookings")
 
+  deleteReason          String?
+  deletedAt             DateTime?
+  scheduledDeleteAt     DateTime?
+
   @@index([role])
   @@index([isActive])
   @@index([isVerified])
   @@index([createdAt])
+  @@index([scheduledDeleteAt])
 }
 
 model DriverVerification {

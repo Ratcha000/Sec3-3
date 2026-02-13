@@ -227,6 +227,39 @@ const deleteUser = async (id) => {
 //     return safeUser;
 // };
 
+//sf art add
+const requestAccountDeletion = async (userId, password, reason) => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId }
+    });
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) {
+        throw new ApiError(401, "Incorrect password");
+    }
+
+    const scheduledDeleteDate = new Date();
+    scheduledDeleteDate.setDate(scheduledDeleteDate.getDate() + 90);
+
+    const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+            isActive: false,
+            deleteReason: reason,
+            deletedAt: new Date(),
+            scheduledDeleteAt: scheduledDeleteDate
+        }
+    });
+
+    const { password: _, ...safeUser } = updatedUser;
+    return safeUser;
+};
+
+
 module.exports = {
     searchUsers,
     getAllUsers,
@@ -239,4 +272,5 @@ module.exports = {
     deleteUser,
     updateUserProfile,
     getUserPublicById,
+    requestAccountDeletion,
 };

@@ -97,4 +97,10 @@ router.put(
     userController.updateCurrentUserProfile
 );
 
+router.delete(
+    '/me/request-delete',
+    protect,
+    userController.requestDeleteAccount
+);
+
 module.exports = router;

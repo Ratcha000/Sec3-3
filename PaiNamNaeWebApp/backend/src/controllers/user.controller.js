@@ -196,6 +196,29 @@ const setUserStatus = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, message: "User status updated", data: updatedUser });
 });
 
+//sf add art
+const requestDeleteAccount = asyncHandler(async (req, res) => {
+    const userId = req.user.sub;
+    const { password, reason } = req.body;
+
+    if (!password || !reason) {
+        return res.status(400).json({
+            success: false,
+            message: "Password and reason are required"
+        });
+    }
+
+    const result = await userService.requestAccountDeletion(userId, password, reason);
+
+    res.status(200).json({
+        success: true,
+        message: "Account scheduled for deletion in 90 days",
+        data: result
+    });
+});
+
+
+
 module.exports = {
     adminListUsers,
     getAllUsers,
@@ -207,5 +230,6 @@ module.exports = {
     adminUpdateUser,
     adminDeleteUser,
     setUserStatus,
+    requestDeleteAccount,
 
 };
