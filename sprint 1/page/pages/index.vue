@@ -141,7 +141,7 @@
               <div class="date-input-group">
                 <label class="input-label">Departure date</label>
                 <div class="date-input">
-                  <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="icon-sm icon-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <input type="text" value="14 Feb 2026" class="input-field">
@@ -150,43 +150,24 @@
 
               <div class="passenger-input-group">
                 <button class="passenger-button">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                   <span>1 Adult, 0 Child, 0 Infant (on lap)</span>
                 </button>
               </div>
             </div>
-
-            <!-- Search Options -->
-            <div class="search-options">
-              <button class="option-button">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            <!-- Book Now -->
+            <div class="book-now-row">
+              <button @click="navigateTo('/booking')" class="book-now-btn">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                Discover Flight Ideas
-              </button>
-
-              <button class="option-button">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                Price Alert
+                Book Now
               </button>
             </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- Promo Section -->
-    <section class="promo-section">
-      <div class="container">
-        <div class="promo-badge">
-          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-          </svg>
-          <span>คูปองสำหรับผู้ใช้ใหม่</span>
+          </div>
         </div>
       </div>
     </section>
@@ -230,6 +211,10 @@ const navigateToEditProfile = () => {
   box-sizing: border-box;
   font-family: 'Nunito', sans-serif;
 }
+
+/* Icon utilities */
+.icon-sm  { width: 16px; height: 16px; flex-shrink: 0; }
+.icon-blue { color: #4A90E2; }
 
 /* Main Container */
 .travel-page {
@@ -724,23 +709,23 @@ const navigateToEditProfile = () => {
 .date-passenger-section {
   display: grid;
   grid-template-columns: 1fr 2fr;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .date-input-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
 .date-input {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
+  gap: 0.5rem;
+  padding: 0.6rem 0.875rem;
   background: #f8f9fa;
-  border: 2px solid #e9ecef;
-  border-radius: 12px;
+  border: 1.5px solid #e9ecef;
+  border-radius: 8px;
   transition: all 0.3s ease;
 }
 
@@ -757,13 +742,14 @@ const navigateToEditProfile = () => {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
+  gap: 0.5rem;
+  padding: 0.6rem 0.875rem;
   background: #f8f9fa;
-  border: 2px solid #e9ecef;
-  border-radius: 12px;
+  border: 1.5px solid #e9ecef;
+  border-radius: 8px;
   color: #212529;
   font-weight: 600;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -773,69 +759,45 @@ const navigateToEditProfile = () => {
   background: white;
 }
 
-/* Search Options */
-.search-options {
+/* Book Now */
+.book-now-row {
   display: flex;
-  gap: 1rem;
+  justify-content: flex-end;
   padding-top: 1rem;
   border-top: 2px solid #e9ecef;
+  margin-top: 1rem;
 }
 
-.option-button {
+.book-now-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  background: transparent;
-  border: 2px solid #e9ecef;
-  border-radius: 10px;
-  color: var(--primary-blue);
-  font-weight: 600;
-  font-size: 0.8rem;
+  padding: 0.75rem 2.5rem;
+  background: var(--primary-blue);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(0, 100, 210, 0.35);
 }
 
-.option-button:hover {
-  background: #f8f9fa;
-  border-color: var(--primary-blue);
+.book-now-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.book-now-btn:hover {
+  background: var(--dark-blue);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 100, 210, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 100, 210, 0.45);
 }
 
-/* Promo Section */
-.promo-section {
-  background: white;
-  padding: 2rem 0;
-}
-
-.container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-
-.promo-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 2rem;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  border-radius: 50px;
-  color: #2c3e50;
-  font-weight: 700;
-  font-size: 0.95rem;
-  box-shadow: 0 4px 16px rgba(255, 165, 0, 0.3);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
+.book-now-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 100, 210, 0.3);
 }
 
 /* Responsive */
@@ -852,12 +814,6 @@ const navigateToEditProfile = () => {
 
   .date-passenger-section {
     grid-template-columns: 1fr;
-  }
-
-  .service-tabs {
-    overflow-x: auto;
-    justify-content: flex-start;
-    padding-bottom: 0.5rem;
   }
 }
 
@@ -879,10 +835,6 @@ const navigateToEditProfile = () => {
 
   .search-card {
     padding: 1.5rem;
-  }
-
-  .search-options {
-    flex-direction: column;
   }
 }
 
