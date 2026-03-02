@@ -150,6 +150,10 @@
 
                                     <!-- CONFIRMED: เพิ่มปุ่มยกเลิก + คงปุ่มแชท -->
                                     <template v-else-if="trip.status === 'confirmed'">
+                                         <NuxtLink :to="`/payment/passenger?bookingId=${trip.id}`"
+                                             class="px-4 py-2 text-sm text-white transition duration-200 bg-green-600 rounded-md hover:bg-green-700">
+                                                 ชำระเงิน
+                                        </NuxtLink>
                                         <button @click.stop="openCancelModal(trip)"
                                             class="px-4 py-2 text-sm text-red-600 transition duration-200 border border-red-300 rounded-md hover:bg-red-50">
                                             ยกเลิกการจอง

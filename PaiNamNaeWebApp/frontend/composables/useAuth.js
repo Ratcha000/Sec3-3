@@ -55,5 +55,17 @@ export function useAuth() {
     return router.push('/')
   }
 
-  return { token, user, login, logout, register }
+  const getUserId = () => {
+    if (typeof user.value === 'string') {
+      try {
+        const userData = JSON.parse(user.value)
+        return userData?.id
+      } catch (e) {
+        return null
+      }
+    }
+    return user.value?.id
+  }
+
+  return { token, user, login, logout, register , getUserId }
 }

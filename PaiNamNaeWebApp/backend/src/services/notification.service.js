@@ -208,6 +208,7 @@ const countUnread = async (ownerId) => {
     return { unread: total };
 };
 
+//add sprint2 black
 const createNotificationByAdminSimple = async (data) => {
   const { userId, type, title, message, relatedId } = data;
   return prisma.notification.create({

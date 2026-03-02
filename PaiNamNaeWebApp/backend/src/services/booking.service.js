@@ -235,11 +235,15 @@ const createBooking = async (data, passengerId) => {
       throw new ApiError(400, 'Not enough seats available on this route.');
     }
 
+    //คำนวณ totalPrice
+    const totalPrice = data.numberOfSeats * route.pricePerSeat;
+
     const booking = await tx.booking.create({
       data: {
         routeId: data.routeId,
         passengerId,
         numberOfSeats: data.numberOfSeats,
+        totalPrice: totalPrice, 
         pickupLocation: data.pickupLocation,
         dropoffLocation: data.dropoffLocation,
       },

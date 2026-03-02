@@ -58,6 +58,13 @@
                                         class="flex items-center block w-full px-4 py-2 text-left text-gray-700 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-600">
                                         คำขอจองเส้นทางของฉัน
                                     </NuxtLink>
+
+                                    <NuxtLink to="/payment/driver"
+                                         class="flex items-center block w-full px-4 py-2 text-left text-gray-700 transition-colors duration-200 hover:bg-green-50 hover:text-green-600">
+                                         <span class="text-lg mr-2"> </span>
+                                        ตรวจสอบการชำระ
+                                     </NuxtLink>
+
                                 </div>
                             </div>
                         </div>
@@ -316,6 +323,12 @@
                                     class="block px-3 py-2 text-gray-500 transition-colors duration-200 rounded-md hover:text-blue-600 hover:bg-blue-50"
                                     @click="closeMobileMenu">
                                     คำขอจองเส้นทางของฉัน
+                                </NuxtLink>
+                                 <NuxtLink to="/payment/driver"
+                                     class="flex items-center block w-full px-3 py-2 text-gray-500 transition-colors duration-200 rounded-md hover:text-green-600 hover:bg-green-50"
+                                     @click="closeMobileMenu">
+                                     <span class="text-lg mr-2"> </span>
+                                     ตรวจสอบการชำระ
                                 </NuxtLink>
                             </div>
                         </div>
