@@ -261,137 +261,190 @@ exports.driverConfirmCash = async (req, res) => {
 // POST /api/payments/:paymentId/upload-receipt
 // ============================================
 exports.uploadReceipt = async (req, res) => {
-  let tempFilePath = null;
-  
+  let uploadedFilePath = null;
+
   try {
     const { paymentId } = req.params;
     const passengerId = req.user.id;
 
-    console.log('📤 Upload receipt:', { paymentId, passengerId });
-    console.log('📤 req.file:', req.file);
-    console.log('📤 req.files:', req.files);
+    console.log('📤 Upload receipt:', {
+      paymentId,
+      passengerId,
+      fileExists: !!req.file,
+      fileName: req.file?.originalname
+    });
 
-    // ✅ รองรับทั้ง multer.diskStorage และ multer.memoryStorage
-    let fileBuffer = null;
-    let fileName = 'receipt.jpg';
-
-    if (req.file) {
-      // กรณี 1: multer.diskStorage - มี path
-      if (req.file.path) {
-        tempFilePath = req.file.path;
-        fileBuffer = await fs.readFile(tempFilePath);
-        console.log('📤 Case 1: diskStorage with path');
-      } 
-      // กรณี 2: multer.memoryStorage - มี buffer โดยตรง
-      else if (req.file.buffer) {
-        fileBuffer = req.file.buffer;
-        console.log('📤 Case 2: memoryStorage with buffer');
-      }
-      // กรณี 3: express-fileupload
-      else if (req.file.data) {
-        fileBuffer = req.file.data;
-        console.log('📤 Case 3: express-fileupload');
-      }
-      
-      fileName = req.file.originalname || 'receipt.jpg';
-    } 
-    // กรณี 4: express-fileupload ใช้ req.files
-    else if (req.files && req.files.receipt) {
-      const file = req.files.receipt;
-      fileBuffer = file.data;
-      fileName = file.name;
-      console.log('📤 Case 4: express-fileupload (req.files)');
+    // ✅ Validate input
+    if (!req.file) {
+      console.error('❌ No file found');
+      return res.status(400).json({ message: 'ไม่พบไฟล์' });
     }
 
-    // ❌ ไม่มีไฟล์
-    if (!fileBuffer) {
-      console.error('❌ No file buffer found');
-      return res.status(400).json({ message: 'กรุณาอัปโหลดไฟล์สลิป' });
+    if (!paymentId || !passengerId) {
+      console.error('❌ Missing paymentId or passengerId');
+      return res.status(400).json({ message: 'ข้อมูลไม่ครบถ้วน' });
     }
 
-    console.log('✅ File buffer size:', fileBuffer.length, 'bytes');
-
-    // ✅ ตรวจสอบ Payment
-    const payment = await prisma.payment.findUnique({ 
-      where: { id: paymentId } 
+    // ✅ Get payment - เพิ่ม include route.driverId
+    const payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: { 
+        passenger: true,
+        booking: {
+          include: {
+            route: {
+              select: { driverId: true }
+            }
+          }
+        }
+      }
     });
 
     if (!payment) {
+      console.error('❌ Payment not found:', paymentId);
       return res.status(404).json({ message: 'ไม่พบรายการชำระเงิน' });
     }
 
     if (payment.passengerId !== passengerId) {
+      console.error('❌ Unauthorized - passenger mismatch');
       return res.status(403).json({ message: 'ไม่มีสิทธิ์เข้าถึง' });
     }
 
-    // ✅ อัปโหลดไป Cloudinary
-    let receiptUrl = null;
+    // ✅ Read file from disk
+    uploadedFilePath = req.file.path;
+    console.log('📁 Reading file from disk:', uploadedFilePath);
+
+    let fileBuffer;
     try {
-      const uploadResult = await uploadToCloudinary(fileBuffer, { 
-        folder: 'receipts', 
-        resource_type: 'image',
-        filename_override: fileName
+      fileBuffer = await fs.readFile(uploadedFilePath);
+      console.log(`✅ File buffer size: ${fileBuffer.length} bytes`);
+    } catch (readError) {
+      console.error('❌ Failed to read file from disk:', readError.message);
+      return res.status(500).json({
+        message: 'ไม่สามารถอ่านไฟล์ได้',
+        error: readError.message
       });
-      receiptUrl = uploadResult.secure_url;
-      console.log('☁️ Cloudinary upload success:', receiptUrl);
-    } catch (err) {
-      console.error('☁️ Cloudinary error:', err.message);
-      return res.status(500).json({ message: 'ไม่สามารถอัปโหลดไฟล์ได้' });
     }
 
-    // ✅ อัปเดต Payment
+    // ✅ Upload to Cloudinary
+    console.log('☁️ Uploading to Cloudinary...');
+
+    let receiptImageUrl = null;
+
+    try {
+      // ✅ แก้: ส่ง (fileBuffer, folder string, options object)
+      const result = await uploadToCloudinary(
+        fileBuffer,
+        `payments/${paymentId}`,  // ✅ folder string (parameter ที่ 2)
+        {
+          resource_type: 'auto',
+          filename_override: req.file.originalname
+        }
+      );
+      
+      receiptImageUrl = result.secure_url;
+      console.log('☁️ Cloudinary upload success:', receiptImageUrl);
+    } catch (cloudinaryError) {
+      console.error('❌ Cloudinary upload error:', cloudinaryError.message);
+      return res.status(500).json({
+        message: 'ไม่สามารถอัปโหลดรูปได้',
+        error: cloudinaryError.message
+      });
+    }
+
+    // ✅ Update payment status
+    console.log('📝 Updating payment with receipt URL...');
+
     const updatedPayment = await prisma.payment.update({
       where: { id: paymentId },
       data: {
-        receiptImageUrl: receiptUrl,
-        paymentMethod: 'transfer',
+        receiptImageUrl: receiptImageUrl,
         status: 'completed',
-        submittedAt: new Date()
+        submittedAt: new Date(),
+        ocrData: {
+          amount: parseFloat(req.body?.amount || payment.amount),
+          referenceNumber: req.body?.referenceNumber || null,
+          date: new Date().toISOString()
+        }
       },
       include: {
-        booking: { include: { route: true } },
-        driver: { select: { id: true, firstName: true, lastName: true } }
+        passenger: { select: { id: true, firstName: true, lastName: true } },
+        booking: { include: { route: true } }
       }
     });
 
-    // ✅ แจ้งเตือนคนขับ
-    await prisma.notification.create({
-      data: {
-        userId: payment.driverId,
-        type: 'BOOKING',
-        title: 'มีสลิปการโอนเงินรอตรวจสอบ',
-        body: `ผู้โดยสารอัปโหลดสลิปการโอนเงิน ${payment.amount} บาท`,
-        metadata: { kind: 'RECEIPT_UPLOADED', paymentId, amount: payment.amount }
-      }
+    console.log('✅ Receipt uploaded successfully:', {
+      paymentId,
+      receiptImageUrl,
+      status: updatedPayment.status,
+      ocrData: updatedPayment.ocrData
     });
 
-    // ✅ ลบไฟล์ temp ถ้ามี
-    if (tempFilePath) {
-      try { 
-        await fs.unlink(tempFilePath); 
-      } catch (e) {
-        console.log('⚠️ Failed to delete temp file:', e.message);
+    // ✅ Get driverId correctly
+    const driverId = payment.booking?.route?.driverId;
+    console.log('📬 Sending notification to driver:', {
+      driverId,
+      paymentId
+    });
+
+    // ✅ Send notification to driver
+    if (driverId) {
+      try {
+        await sendNotification({
+          userId: driverId,
+          type: 'PAYMENT_RECEIPT',
+          title: '📸 มีการอัปโหลดสลิปชำระเงิน',
+          message: `ผู้โดยสารได้อัปโหลดสลิปชำระเงิน ${payment.amount} บาท กรุณาตรวจสอบ`,
+          metadata: {
+            kind: 'RECEIPT_UPLOADED',
+            paymentId,
+            amount: payment.amount,
+            receiptImageUrl: receiptImageUrl,
+            passengerName: `${payment.passenger.firstName} ${payment.passenger.lastName}`
+          }
+        });
+        console.log('📬 Notification sent to driver successfully');
+      } catch (notifError) {
+        console.warn('⚠️ Failed to send notification:', notifError.message);
       }
+    } else {
+      console.warn('⚠️ No driver found for notification');
     }
 
-    console.log('✅ Receipt uploaded successfully:', updatedPayment.id);
-    res.status(200).json({ 
-      message: 'อัปโหลดสลิปสำเร็จ รอการตรวจสอบ', 
-      data: updatedPayment 
+    // ✅ Clean up: Delete file from disk
+    try {
+      await fs.unlink(uploadedFilePath);
+      console.log('🗑️ Temporary file deleted:', uploadedFilePath);
+    } catch (deleteError) {
+      console.warn('⚠️ Failed to delete temporary file:', deleteError.message);
+    }
+
+    res.status(200).json({
+      message: 'อัปโหลดสลิปเรียบร้อย',
+      data: updatedPayment
     });
 
   } catch (error) {
     console.error('❌ Upload receipt error:', error);
-    
-    if (tempFilePath) {
-      try { 
-        await fs.unlink(tempFilePath); 
-      } catch (e) {}
+
+    // ✅ Clean up: Delete temporary file on error
+    if (uploadedFilePath) {
+      try {
+        await fs.unlink(uploadedFilePath);
+        console.log('🗑️ Temporary file deleted on error:', uploadedFilePath);
+      } catch (deleteError) {
+        console.warn('⚠️ Failed to delete temporary file:', deleteError.message);
+      }
     }
-    
-    res.status(500).json({ message: error.message || 'ไม่สามารถอัปโหลดสลิปได้' });
+
+    res.status(500).json({
+      message: error.message || 'ไม่สามารถอัปโหลดสลิปได้',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
+
+
 
 // ============================================
 // PATCH /api/payments/:paymentId/verify
