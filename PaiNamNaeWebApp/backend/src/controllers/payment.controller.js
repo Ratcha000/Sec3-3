@@ -2,7 +2,7 @@ const prisma = require('../utils/prisma');
 const { uploadToCloudinary } = require('../utils/cloudinary');
 const fs = require('fs').promises;
 const { sendNotification } = require('../services/notification.service');
-
+const { extractSlipData } = require('../services/ocr.service');
 // ============================================
 // GET /api/payments/passenger
 // ============================================
@@ -285,7 +285,7 @@ exports.uploadReceipt = async (req, res) => {
       return res.status(400).json({ message: 'ข้อมูลไม่ครบถ้วน' });
     }
 
-    // ✅ Get payment - เพิ่ม include route.driverId
+    // ✅ Get payment
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
       include: { 
@@ -326,16 +326,35 @@ exports.uploadReceipt = async (req, res) => {
       });
     }
 
+    // ✅ 🆕 NEW: OCR ข้อมูลจากรูปสลิป (Tesseract.js)
+    console.log('🔍 Starting OCR extraction...');
+    let ocrData = null;
+
+    try {
+      ocrData = await extractSlipData(fileBuffer);
+      console.log('✅ OCR extraction success:', ocrData);
+    } catch (ocrError) {
+      console.warn('⚠️ OCR extraction failed:', ocrError.message);
+      // ไม่ throw error - ให้ผู้ใช้ใส่เอง
+      ocrData = {
+        amount: null,
+        date: new Date().toISOString(),
+        referenceNumber: null,
+        rawText: '',
+        ocrFailed: true,
+        error: ocrError.message
+      };
+    }
+
     // ✅ Upload to Cloudinary
     console.log('☁️ Uploading to Cloudinary...');
 
     let receiptImageUrl = null;
 
     try {
-      // ✅ แก้: ส่ง (fileBuffer, folder string, options object)
       const result = await uploadToCloudinary(
         fileBuffer,
-        `payments/${paymentId}`,  // ✅ folder string (parameter ที่ 2)
+        `payments/${paymentId}`,
         {
           resource_type: 'auto',
           filename_override: req.file.originalname
@@ -352,8 +371,8 @@ exports.uploadReceipt = async (req, res) => {
       });
     }
 
-    // ✅ Update payment status
-    console.log('📝 Updating payment with receipt URL...');
+    // ✅ Update payment with OCR data
+    console.log('📝 Updating payment with receipt URL and OCR data...');
 
     const updatedPayment = await prisma.payment.update({
       where: { id: paymentId },
@@ -361,10 +380,15 @@ exports.uploadReceipt = async (req, res) => {
         receiptImageUrl: receiptImageUrl,
         status: 'completed',
         submittedAt: new Date(),
+        // ✅ 🆕 บันทึก OCR data ลงฐานข้อมูล
         ocrData: {
-          amount: parseFloat(req.body?.amount || payment.amount),
-          referenceNumber: req.body?.referenceNumber || null,
-          date: new Date().toISOString()
+          amount: ocrData.amount,
+          date: ocrData.date,
+          referenceNumber: ocrData.referenceNumber,
+          rawText: ocrData.rawText,
+          ocrFailed: ocrData.ocrFailed || false,
+          extractedAt: new Date().toISOString(),
+          source: 'tesseract_ocr'
         }
       },
       include: {
@@ -376,15 +400,18 @@ exports.uploadReceipt = async (req, res) => {
     console.log('✅ Receipt uploaded successfully:', {
       paymentId,
       receiptImageUrl,
-      status: updatedPayment.status,
-      ocrData: updatedPayment.ocrData
+      ocrAmount: ocrData.amount,
+      actualAmount: payment.amount,
+      amountMatch: ocrData.amount === payment.amount
     });
 
     // ✅ Get driverId correctly
     const driverId = payment.booking?.route?.driverId;
     console.log('📬 Sending notification to driver:', {
       driverId,
-      paymentId
+      paymentId,
+      ocrAmount: ocrData.amount,
+      actualAmount: payment.amount
     });
 
     // ✅ Send notification to driver
@@ -399,6 +426,8 @@ exports.uploadReceipt = async (req, res) => {
             kind: 'RECEIPT_UPLOADED',
             paymentId,
             amount: payment.amount,
+            ocrAmount: ocrData.amount,
+            amountMatch: ocrData.amount === payment.amount,
             receiptImageUrl: receiptImageUrl,
             passengerName: `${payment.passenger.firstName} ${payment.passenger.lastName}`
           }
