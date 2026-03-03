@@ -53,7 +53,7 @@ router.post(
 router.patch(
   '/:paymentId/verify',
   protect,
-  validate({ body: verifyPaymentSchema }),
+  validate(verifyPaymentSchema),  // ✅ ส่ง schema โดยตรง (ไม่ใช่ {body: ...})
   paymentController.verifyPayment
 );
 

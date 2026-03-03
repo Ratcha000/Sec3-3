@@ -59,7 +59,8 @@ enum NotificationType {
   BOOKING
   ROUTE
   REPORT_WARNING   
-  ACCOUNT_BANNED   
+  ACCOUNT_BANNED 
+  PAYMENT_VERIFICATION  
 }
 
 model User {
@@ -274,7 +275,10 @@ model Payment {
   passenger         User        @relation("PassengerPayments", fields: [passengerId], references: [id], onDelete: Cascade)
   
   amount            Float       // จำนวนเงินที่ต้องชำระ
+  paymentMethod     String?     @default("transfer") 
+  submittedAt       DateTime?   
   status            String      @default("pending") // pending, completed, verified, rejected
+  
   
   qrCodeUrl         String?     // QR Code ของคนขับ (ชำระเงินไป)
   

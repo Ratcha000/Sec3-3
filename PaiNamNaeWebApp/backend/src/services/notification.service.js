@@ -223,6 +223,26 @@ const createNotificationByAdminSimple = async (data) => {
   });
 };
 
+const sendNotification = async ({ userId, type, title, message, metadata = {} }) => {
+  try {
+    const notification = await prisma.notification.create({
+      data: {
+        userId,
+        type,
+        title,
+        body: message,  
+        metadata: metadata ? JSON.stringify(metadata) : null,
+        
+      }
+    });
+
+    console.log('✅ Notification sent to user:', userId);
+    return notification;
+  } catch (error) {
+    console.error('❌ Error sending notification:', error.message);
+    throw error;
+  }
+};
 
 module.exports = {
     listMyNotifications,
@@ -237,4 +257,5 @@ module.exports = {
     countUnread,
     adminMarkRead,
     createNotificationByAdminSimple,
+    sendNotification,
 };

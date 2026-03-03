@@ -73,12 +73,28 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <p class="text-sm text-gray-600 font-semibold">📍 จากต้น</p>
-                <p class="text-lg font-bold text-gray-900">{{ payment.booking.route.startLocation }}</p>
+                <p class="text-lg font-bold text-gray-900">
+                  {{ typeof payment.booking.route.startLocation === 'string' 
+                    ? payment.booking.route.startLocation 
+                    : payment.booking.route.startLocation.name }}
+                </p>
               </div>
               <div>
                 <p class="text-sm text-gray-600 font-semibold">📍 ปลายทาง</p>
-                <p class="text-lg font-bold text-gray-900">{{ payment.booking.route.endLocation }}</p>
+                <p class="text-lg font-bold text-gray-900">
+                  {{ typeof payment.booking.route.endLocation === 'string' 
+                    ? payment.booking.route.endLocation 
+                    : payment.booking.route.endLocation.name }}
+                </p>
               </div>
+            </div>
+            
+            <!-- ✅ วิธีชำระเงิน -->
+            <div class="mt-4 pt-4 border-t border-gray-300">
+              <p class="text-sm text-gray-600 font-semibold mb-2"> วิธีชำระเงิน</p>
+              <p class="text-lg font-bold" :class="getPaymentMethodColor(payment)">
+                {{ getPaymentMethodLabel(payment) }}
+              </p>
             </div>
           </div>
 
@@ -115,7 +131,7 @@
             </div>
           </div>
 
-          <!-- Receipt Image -->
+          <!-- Receipt Image or Payment Method Info -->
           <div v-if="payment.receiptImageUrl" class="px-6 py-4 border-b border-gray-200">
             <h4 class="font-semibold text-gray-900 mb-3"> รูปสลิป</h4>
             
@@ -159,9 +175,27 @@
             </div>
           </div>
 
-          <!-- No Receipt Warning -->
-          <div v-else class="px-6 py-4 border-b border-gray-200 bg-orange-50">
-            <p class="text-orange-800"> ยังไม่มีรูปสลิป</p>
+          <!-- ✅ แยกแสดงตามวิธีชำระเงิน -->
+          <div v-else class="px-6 py-4 border-b border-gray-200">
+            <!-- เงินสด - ไม่ต้องมีสลิป -->
+            <div v-if="payment.paymentMethod === 'cash' || payment.status === 'cash_pending'" class="bg-blue-50 border border-blue-300 p-4 rounded-lg">
+              <p class="text-blue-800 font-semibold">
+                 ชำระด้วยเงินสด
+              </p>
+              <p class="text-sm text-blue-700 mt-2">
+                ผู้โดยสารชำระเงินสดแล้ว กรุณายืนยันการรับเงิน
+              </p>
+            </div>
+
+            <!-- โอนธนาคาร/QR - ต้องมีสลิป แต่ยังไม่อัปโหลด -->
+            <div v-else class="bg-orange-50 border border-orange-300 p-4 rounded-lg">
+              <p class="text-orange-800 font-semibold">
+                {{ payment.paymentMethod === 'transfer' ? ' โอนธนาคาร' : ' QR Code' }}
+              </p>
+              <p class="text-sm text-orange-700 mt-2">
+                ⚠️ รอรูปสลิปการโอนจากผู้โดยสาร
+              </p>
+            </div>
           </div>
 
           <!-- Action Buttons -->
@@ -293,7 +327,7 @@ const verificationNote = ref('')
 
 // Computed
 const pendingPayments = computed(() => {
-  return payments.value.filter(p => p.status === 'completed' && p.verificationStatus === 'pending')
+  return payments.value.filter(p => p.verificationStatus === 'pending')
 })
 
 // ดึงข้อมูล Payments
@@ -304,15 +338,19 @@ const fetchDriverPayments = async () => {
 
     const response = await $api('/payments/driver/list', {
       query: {
-        status: 'completed',
-        verificationStatus: 'pending'
+        verificationStatus: 'pending',
+        page: 1,
+        limit: 20
       }
     })
 
-    payments.value = response.payments || []
+    payments.value = response.data || response.payments || response || []
+    
+    console.log('✅ Loaded total payments:', payments.value.length)
+    
   } catch (err) {
     error.value = err.data?.message || 'ไม่สามารถดึงข้อมูลได้'
-    console.error('Error:', err)
+    console.error('❌ Error fetching payments:', err)
   } finally {
     isLoading.value = false
   }
@@ -344,8 +382,8 @@ const handleVerification = async () => {
       {
         method: 'PATCH',
         body: {
-          verificationStatus: verificationStatus.value,
-          verificationNote: verificationNote.value
+          status: verificationStatus.value,
+          note: verificationNote.value
         }
       }
     )
@@ -369,10 +407,35 @@ const isAmountMatch = (payment) => {
   return payment.ocrData?.amount === payment.amount
 }
 
+// ✅ Helper: รับชื่อวิธีชำระเงิน
+const getPaymentMethodLabel = (payment) => {
+  const method = payment.paymentMethod
+  const status = payment.status
+  
+  if (method === 'cash' || status === 'cash_pending') return ' เงินสด'
+  if (method === 'transfer' || status === 'completed') return ' โอนธนาคาร'
+  if (method === 'qrcode') return ' QR Code'
+  return '❓ ไม่ระบุ'
+}
+
+// ✅ Helper: สีของวิธีชำระเงิน
+const getPaymentMethodColor = (payment) => {
+  const method = payment.paymentMethod
+  const status = payment.status
+  
+  if (method === 'cash' || status === 'cash_pending') return 'text-blue-600'
+  if (method === 'transfer' || status === 'completed') return 'text-purple-600'
+  if (method === 'qrcode') return 'text-green-600'
+  return 'text-gray-600'
+}
+
 onMounted(() => {
   fetchDriverPayments()
 })
+
 </script>
 
 <style scoped>
 </style>
+
+//415

@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const Joi = require('joi');
 
 const createPaymentSchema = z.object({
   bookingId: z.string().cuid(),
@@ -13,8 +14,12 @@ const uploadReceiptSchema = z.object({
 });
 
 const verifyPaymentSchema = z.object({
-  verificationStatus: z.enum(['approved', 'rejected']),
-  verificationNote: z.string().optional(),
+  status: z.enum(['approved', 'rejected'])
+    .describe('Status must be either "approved" or "rejected"'),
+  note: z.string()
+    .max(500, 'Note must not exceed 500 characters')
+    .optional()
+    .nullable()
 });
 
 const listPaymentsQuerySchema = z.object({
