@@ -32,24 +32,33 @@ export default defineNuxtPlugin(() => {
     // },
 
     onResponseError({ response }) {
-      let body = response?._data
-      if (typeof body === 'string') {
-        try { body = JSON.parse(body) } catch { }
-      }
+  let body = response?._data
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body) } catch { }
+  }
 
-      const msg =
-        body?.message ||
-        body?.error?.message ||
-        body?.error ||
-        response?.statusText ||
-        'Request failed'
+  const status = response?.status
 
-      throw createError({
-        statusCode: response?.status || 500,
-        statusMessage: msg,
-        data: body,
-      })
-    },
+  const msg =
+    body?.message ||
+    body?.error?.message ||
+    body?.error ||
+    response?.statusText ||
+    'Request failed'
+
+  // 🔥 ถ้าโดน 403 (Blacklist)
+  if (status === 403) {
+    if (process.client) {
+      window.dispatchEvent(new CustomEvent('account-banned'))
+    }
+  }
+
+  throw createError({
+    statusCode: status || 500,
+    statusMessage: msg,
+    data: body,
+  })
+}
   })
 
   return { provide: { api } }
