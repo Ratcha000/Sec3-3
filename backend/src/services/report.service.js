@@ -33,6 +33,33 @@ const getReportDetail = async (reportId) => {
   return report;
 };
 
+// ฟังก์ชันสำหรับอัปเดตสถานะและแจ้งเตือนผู้แจ้งโดยตรง
+const updateReportStatus = async (reportId, adminId, { status, adminNote }) => {
+  const report = await prisma.report.findUnique({ where: { id: reportId } });
+  if (!report) throw new ApiError(404, 'ไม่พบรายงาน');
+
+  const updatedReport = await prisma.report.update({
+    where: { id: reportId },
+    data: { 
+      status, 
+      adminNote, 
+      adminId,
+      resolvedAt: status === 'resolved' ? new Date() : report.resolvedAt 
+    }
+  });
+
+  // แจ้งเตือนกลับไปหาคนแจ้ง (Reporter)
+  await notifService.createNotificationByAdmin({
+    userId: report.reporterId,
+    type: 'REPORT_UPDATE',
+    title: '📢 อัปเดตสถานะรายงานของคุณ',
+    body: `รายงานหมายเลข #${reportId.slice(-6)} ถูกปรับสถานะเป็น: ${status}`,
+    relatedId: reportId
+  });
+
+  return updatedReport;
+};
+
 const reviewReport = async (reportId, adminId, { severity, adminNote }) => {
   const blacklistService = require('./blacklist.service');
   const report = await prisma.report.findUnique({ 
@@ -44,6 +71,14 @@ const reviewReport = async (reportId, adminId, { severity, adminNote }) => {
   const updatedReport = await prisma.report.update({
     where: { id: reportId },
     data: { status: 'reviewed', severity, adminId, adminNote, resolvedAt: new Date() }
+  });
+
+  await notifService.createNotificationByAdmin({
+    userId: report.reporterId, //  อ้างอิงจาก reporterId ใน Model Report
+    type: 'REPORT_UPDATE',      
+    title: '📢 อัปเดตสถานะรายงานของคุณ',
+    body: `รายงานหมวด ${report.category} ของคุณได้รับการตรวจสอบโดยแอดมินแล้ว สถานะ: ${severity}`,
+    relatedId: reportId
   });
 
   if (severity === 'warning') {
@@ -100,6 +135,14 @@ const sendWarningMessage = async (reportId, adminId, { subject, message }) => {
   });
   return prisma.report.update({ where: { id: reportId }, data: { status: 'resolved', adminId } });
 };
+
+await notifService.createNotificationByAdmin({
+    userId: report.reporterId, // ใช้ ID ของคนส่งรายงาน 
+    type: 'REPORT_UPDATE',     
+    title: '📢 Your report status has been updated.',
+    body: `แอดมินได้ดำเนินการส่งข้อความตักเตือนไปยังผู้ใช้ที่คุณรายงานแล้ว (หัวข้อ: ${subject})`, 
+    relatedId: reportId
+  });
 
 const getBlacklistedUsers = async ({ page = 1, limit = 10 }) => {
   const skip = (page - 1) * limit;
@@ -168,6 +211,7 @@ module.exports = {
   submitReport,
   listReports,
   getReportDetail,
+  updateReportStatus,
   reviewReport,
   sendWarningMessage,
   getBlacklistedUsers,
