@@ -16,6 +16,17 @@ const getReportDetail = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: 'ดึงข้อมูลรายงานสำเร็จ', data });
 });
 
+const updateReportStatus = asyncHandler(async (req, res) => {
+  const { reportId } = req.params;
+  const result = await reportService.updateReportStatus(reportId, req.user.sub, req.body);
+  
+  res.status(200).json({ 
+    success: true, 
+    message: 'อัปเดตสถานะรายงานและส่งการแจ้งเตือนสำเร็จ', 
+    data: result 
+  });
+});
+
 const reviewReport = asyncHandler(async (req, res) => {
   const { reportId } = req.params;
   const { severity, adminNote } = req.body;
@@ -42,6 +53,7 @@ module.exports = {
   submitReport,
   listReports,
   getReportDetail,
+  updateReportStatus,
   reviewReport,
   sendWarningMessage,
   getBlacklistedUsers,
