@@ -25,15 +25,9 @@ const listReportsQuerySchema = Joi.object().keys({
   sortOrder: Joi.string().valid('asc', 'desc').default('desc')
 });
 
-const updateReportStatusSchema = Joi.object().keys({
-  status: Joi.string().valid('pending', 'reviewed', 'resolved', 'cancelled').required(),
-  adminNote: Joi.string().max(2000).allow('', null)
-});
-
 module.exports = {
   createReportSchema,
   reviewReportSchema,
   sendWarningSchema,
-  listReportsQuerySchema,
-  updateReportStatusSchema
+  listReportsQuerySchema
 };

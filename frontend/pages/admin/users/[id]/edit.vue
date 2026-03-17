@@ -9,7 +9,7 @@
                 <NuxtLink to="/admin/users"
                     class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
                     <i class="fa-solid fa-arrow-left"></i>
-                    <span>Back</span>
+                    <span>ย้อนกลับ</span>
                 </NuxtLink>
             </div>
 
@@ -17,51 +17,49 @@
                 <!-- Title -->
                 <div class="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
                     <div class="flex items-center gap-3">
-                        <h1 class="text-2xl font-semibold text-gray-800">Edit User</h1>
-                        <span class="text-sm text-gray-500">Update the information and click “Save”</span>
+                        <h1 class="text-2xl font-semibold text-gray-800">แก้ไขผู้ใช้</h1>
+                        <span class="text-sm text-gray-500">ปรับข้อมูลแล้วกด “บันทึก”</span>
                     </div>
-                    <button
-                        @click="goToUserIncidents"
-                        class="inline-flex items-center gap-2 px-4 py-2 text-white bg-red-500 rounded-md hover:bg-red-600">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                        View Incident
-                    </button>
                 </div>
 
                 <!-- Card -->
                 <div class="bg-white border border-gray-300 rounded-lg shadow-sm">
                     <div class="px-4 py-4 border-b border-gray-200 sm:px-6">
-                        <h2 class="font-medium text-gray-800">User Information</h2>
+                        <h2 class="font-medium text-gray-800">ข้อมูลผู้ใช้</h2>
                     </div>
 
                     <!-- Loading / Error -->
-                    <div v-if="isLoading" class="p-8 text-center text-gray-500">Loading...</div>
+                    <div v-if="isLoading" class="p-8 text-center text-gray-500">กำลังโหลดข้อมูล...</div>
                     <div v-else-if="loadError" class="p-8 text-center text-red-600">{{ loadError }}</div>
 
                     <div v-else class="grid grid-cols-1 gap-6 p-4 sm:p-6">
                         <div class="w-full max-w-[80rem] mx-auto space-y-6">
                             <!-- Account -->
                             <div>
-                                <h3 class="mb-3 text-sm font-semibold text-gray-700">Account</h3>
+                                <h3 class="mb-3 text-sm font-semibold text-gray-700">บัญชีผู้ใช้</h3>
                                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div>
-                                        <label class="block mb-1 text-xs font-medium text-gray-600">Email *</label>
-                                        <input v-model.trim="form.email" type="email"
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">อีเมล *</label>
+                                        <input v-model.trim="form.email" type="email" placeholder="example@email.com"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
                                     </div>
                                     <div>
-                                        <label class="block mb-1 text-xs font-medium text-gray-600">Username *</label>
-                                        <input v-model.trim="form.username" type="text"
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">ชื่อผู้ใช้
+                                            (username) *</label>
+                                        <input v-model.trim="form.username" type="text" placeholder="user_001"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
                                     </div>
                                     <div>
-                                        <label class="block mb-1 text-xs font-medium text-gray-600">Password (leave blank if not changing)</label>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">รหัสผ่าน
+                                            (เว้นว่างถ้าไม่เปลี่ยน)</label>
                                         <input v-model="form.password" type="password"
+                                            placeholder="อย่างน้อย 8 ตัวอักษร"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
                                     </div>
                                     <div>
-                                        <label class="block mb-1 text-xs font-medium text-gray-600">Phone *</label>
-                                        <input v-model.trim="form.phoneNumber" type="tel"
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">เบอร์โทรศัพท์
+                                            *</label>
+                                        <input v-model.trim="form.phoneNumber" type="tel" placeholder="0891234567"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
                                     </div>
                                 </div>
@@ -69,29 +67,29 @@
 
                             <!-- Personal -->
                             <div>
-                                <h3 class="mb-3 text-sm font-semibold text-gray-700">Personal Info</h3>
+                                <h3 class="mb-3 text-sm font-semibold text-gray-700">ข้อมูลส่วนตัว</h3>
                                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div>
-                                        <label class="block mb-1 text-xs font-medium text-gray-600">First Name *</label>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">ชื่อจริง *</label>
                                         <input v-model.trim="form.firstName" type="text"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
                                     </div>
                                     <div>
-                                        <label class="block mb-1 text-xs font-medium text-gray-600">Last Name *</label>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">นามสกุล *</label>
                                         <input v-model.trim="form.lastName" type="text"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
                                     </div>
                                     <div>
-                                        <label class="block mb-1 text-xs font-medium text-gray-600">Gender *</label>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">เพศ *</label>
                                         <select v-model="form.gender"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
-                                            <option value="">-- Select --</option>
+                                            <option value="">-- เลือก --</option>
                                             <option value="MALE">MALE</option>
                                             <option value="FEMALE">FEMALE</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block mb-1 text-xs font-medium text-gray-600">Role *</label>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">บทบาท *</label>
                                         <select v-model="form.role"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
                                             <option value="PASSENGER">PASSENGER</option>
@@ -104,15 +102,17 @@
 
                             <!-- National ID -->
                             <div>
-                                <h3 class="mb-3 text-sm font-semibold text-gray-700">National ID</h3>
+                                <h3 class="mb-3 text-sm font-semibold text-gray-700">บัตรประชาชน</h3>
                                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div>
-                                        <label class="block mb-1 text-xs font-medium text-gray-600">ID Number *</label>
-                                        <input v-model.trim="form.nationalIdNumber" type="text"
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">เลขบัตรประชาชน
+                                            *</label>
+                                        <input v-model.trim="form.nationalIdNumber" type="text" placeholder="13 หลัก"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
                                     </div>
                                     <div>
-                                        <label class="block mb-1 text-xs font-medium text-gray-600">Expiry Date *</label>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">วันหมดอายุบัตร
+                                            *</label>
                                         <input v-model="form.nationalIdExpiryDate" type="date"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
                                     </div>
@@ -122,7 +122,7 @@
                             <!-- Uploads -->
                             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
                                 <div>
-                                    <label class="block mb-1 text-xs font-medium text-gray-600">ID Card Image *</label>
+                                    <label class="block mb-1 text-xs font-medium text-gray-600">รูปบัตรประชาชน *</label>
                                     <div class="p-4 text-center border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-blue-500"
                                         @click="pick('idCardInput')">
                                         <div v-if="idPreview" class="flex items-center justify-center">
@@ -130,7 +130,7 @@
                                         </div>
                                         <div v-else class="text-gray-500">
                                             <i class="text-3xl fa-regular fa-image"></i>
-                                            <p class="mt-1 text-sm">Click to upload image</p>
+                                            <p class="mt-1 text-sm">กดเพื่อเลือกรูปภาพ</p>
                                         </div>
                                     </div>
                                     <input ref="idCardInput" type="file" accept="image/*" class="hidden"
@@ -138,7 +138,8 @@
                                 </div>
 
                                 <div>
-                                    <label class="block mb-1 text-xs font-medium text-gray-600">Selfie Image *</label>
+                                    <label class="block mb-1 text-xs font-medium text-gray-600">รูปถ่ายใบหน้า (Selfie)
+                                        *</label>
                                     <div class="p-4 text-center border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-blue-500"
                                         @click="pick('selfieInput')">
                                         <div v-if="selfiePreview" class="flex items-center justify-center">
@@ -146,7 +147,7 @@
                                         </div>
                                         <div v-else class="text-gray-500">
                                             <i class="text-3xl fa-regular fa-image"></i>
-                                            <p class="mt-1 text-sm">Click to upload image</p>
+                                            <p class="mt-1 text-sm">กดเพื่อเลือกรูปภาพ</p>
                                         </div>
                                     </div>
                                     <input ref="selfieInput" type="file" accept="image/*" class="hidden"
@@ -165,13 +166,14 @@
                                     opacity="0.25" />
                                 <path d="M4 12a8 8 0 018-8" fill="white" opacity="0.75" />
                             </svg>
-                            Save
+                            บันทึก
                         </button>
                     </div>
                 </div>
             </div>
         </main>
 
+        <!-- Mobile Overlay -->
         <div id="overlay" class="fixed inset-0 z-40 hidden bg-black bg-opacity-50 lg:hidden"
             @click="closeMobileSidebar"></div>
     </div>
@@ -188,11 +190,6 @@ definePageMeta({ middleware: ['admin-auth'] })
 
 const route = useRoute()
 const { toast } = useToast()
-
-// เพิ่มฟังก์ชันสำหรับไปยังหน้า incident ของ user
-function goToUserIncidents() {
-    navigateTo(`/admin/incidents?userId=${route.params.id}`)
-}
 
 // ---------- STATE ----------
 const form = reactive({

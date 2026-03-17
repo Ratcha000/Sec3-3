@@ -217,11 +217,6 @@
                                             title="ลบ" aria-label="ลบ">
                                             <i class="text-lg fa-regular fa-trash-can"></i>
                                         </button>
-                                        <button @click="goToUserIncidents(u)"
-                                            class="p-2 text-gray-500 hover:text-orange-600"
-                                            title="Incidents">
-                                            <i class="fa-solid fa-triangle-exclamation"></i>
-                                        </button>
                                     </td>
                                 </tr>
 
@@ -294,10 +289,6 @@ import AdminHeader from '~/components/admin/AdminHeader.vue'
 import AdminSidebar from '~/components/admin/AdminSidebar.vue'
 import ConfirmModal from '~/components/ConfirmModal.vue'
 import { useToast } from '~/composables/useToast'
-
-function goToUserIncidents(u) {
-    navigateTo(`/admin/incidents?userId=${u.id}`)
-}
 
 dayjs.locale('th')
 dayjs.extend(buddhistEra)

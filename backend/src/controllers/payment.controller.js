@@ -261,8 +261,6 @@ exports.driverConfirmCash = async (req, res) => {
 // POST /api/payments/:paymentId/upload-receipt
 // ============================================
 exports.uploadReceipt = async (req, res) => {
-  let uploadedFilePath = null;
-
   try {
     const { paymentId } = req.params;
     const passengerId = req.user.id;
@@ -310,21 +308,9 @@ exports.uploadReceipt = async (req, res) => {
       return res.status(403).json({ message: 'ไม่มีสิทธิ์เข้าถึง' });
     }
 
-    // ✅ Read file from disk
-    uploadedFilePath = req.file.path;
-    console.log('📁 Reading file from disk:', uploadedFilePath);
-
-    let fileBuffer;
-    try {
-      fileBuffer = await fs.readFile(uploadedFilePath);
-      console.log(`✅ File buffer size: ${fileBuffer.length} bytes`);
-    } catch (readError) {
-      console.error('❌ Failed to read file from disk:', readError.message);
-      return res.status(500).json({
-        message: 'ไม่สามารถอ่านไฟล์ได้',
-        error: readError.message
-      });
-    }
+    // ✅ ใช้ buffer จาก memoryStorage โดยตรง
+    const fileBuffer = req.file.buffer;
+    console.log(`✅ File buffer size: ${fileBuffer.length} bytes`);
 
     // ✅ 🆕 NEW: OCR ข้อมูลจากรูปสลิป (Tesseract.js)
     console.log('🔍 Starting OCR extraction...');
@@ -440,13 +426,6 @@ exports.uploadReceipt = async (req, res) => {
       console.warn('⚠️ No driver found for notification');
     }
 
-    // ✅ Clean up: Delete file from disk
-    try {
-      await fs.unlink(uploadedFilePath);
-      console.log('🗑️ Temporary file deleted:', uploadedFilePath);
-    } catch (deleteError) {
-      console.warn('⚠️ Failed to delete temporary file:', deleteError.message);
-    }
 
     res.status(200).json({
       message: 'อัปโหลดสลิปเรียบร้อย',
@@ -455,17 +434,6 @@ exports.uploadReceipt = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Upload receipt error:', error);
-
-    // ✅ Clean up: Delete temporary file on error
-    if (uploadedFilePath) {
-      try {
-        await fs.unlink(uploadedFilePath);
-        console.log('🗑️ Temporary file deleted on error:', uploadedFilePath);
-      } catch (deleteError) {
-        console.warn('⚠️ Failed to delete temporary file:', deleteError.message);
-      }
-    }
-
     res.status(500).json({
       message: error.message || 'ไม่สามารถอัปโหลดสลิปได้',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined

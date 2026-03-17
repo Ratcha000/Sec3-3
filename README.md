@@ -264,3 +264,22 @@ For questions or feedback, reach out to:
 **Email:**
 - [jonathandoillon2002@gmail.com](mailto:jonathandoillon2002@gmail.com)
 - [seth.s@kkumail.com](mailto:seth.s@kkumail.com)
+
+## อัปเดตฟีเจอร์: ระบบจัดการเหตุการณ์ (สำหรับผู้ดูแลระบบ)
+
+**User Story:**
+As an admin, I want to keep the users updated on their reported incidents.
+(ในฐานะผู้ดูแลระบบ ฉันต้องการอัปเดตสถานะเหตุการณ์ที่ผู้ใช้รายงาน เพื่อให้ผู้ใช้รับทราบความคืบหน้า)
+
+### การเปลี่ยนแปลงฝั่ง Backend
+
+* เพิ่ม route ใหม่: `src/routes/incident.route.js`
+* อัปเดตการเชื่อม route ใน `src/routes/index.js` (บรรทัดที่ 13 และ 33)
+* เพิ่มไฟล์ตั้งค่า Prisma: `src/config/prisma.js`
+* สร้าง controller: `src/controllers/incident.controller.js`
+* สร้าง service: `src/services/incident.service.js`
+
+### การเปลี่ยนแปลงฝั่ง Frontend
+
+* อัปเดตเมนู Admin Sidebar ใน `components/admin/AdminSidebar.vue` (บรรทัดที่ 46–51)
+* เพิ่มหน้าใหม่สำหรับผู้ดูแลระบบ: `pages/admin/incidents`

@@ -194,6 +194,18 @@
                ดูสลิป
             </button>
 
+            <!-- Download Receipt Button -->
+            <button
+              v-if="payment.status === 'approved' || payment.verificationStatus === 'approved'"
+              @click="downloadReceipt(payment)"
+              class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              </svg>
+              ใบเสร็จรับเงิน
+            </button>
+
             <!-- Re-upload if rejected -->
             <button
               v-if="payment.verificationStatus === 'rejected' && payment.status !== 'pending'"
@@ -296,6 +308,194 @@ const openReceipt = (url) => {
     window.open(url, '_blank')
   }
 }
+
+
+
+const downloadReceipt = (payment) => {
+  const receiptNumber = `RCP-${payment.id?.substring(0, 8).toUpperCase() || 'XXXXXXXX'}`
+  const passenger = payment.passenger || user.value || {}
+  const route = payment.booking?.route || {}
+  const driver = payment.driver || {}
+  const startLocation = route.startLocation?.name || route.startLocation || 'N/A'
+  const endLocation = route.endLocation?.name || route.endLocation || 'N/A'
+  const paymentMethodMap = {
+    'bank_transfer': 'โอนผ่านธนาคาร / Bank Transfer',
+    'qr_code': 'พร้อมเพย์ / PromptPay',
+    'cash': 'เงินสด / Cash',
+    'promptpay': 'พร้อมเพย์ / PromptPay',
+    'mobile_wallet': 'กระเป๋าเงินดิจิทัล / Mobile Wallet'
+  }
+  const methodDisplay = paymentMethodMap[payment.paymentMethod] || payment.paymentMethod || 'N/A'
+
+  const formatDateFull = (date) => {
+    if (!date) return 'N/A'
+    return new Date(date).toLocaleDateString('th-TH', {
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    })
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ใบเสร็จรับเงิน ${receiptNumber}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Sarabun', sans-serif; background: #f3f4f6; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 20px; }
+    .receipt { width: 148mm; min-height: 210mm; background: #fff; padding: 28px 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.12); border-radius: 8px; position: relative; overflow: hidden; }
+    .receipt::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #10b981, #059669); }
+    .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-30deg); font-size: 80px; font-weight: 700; color: rgba(16,185,129,0.06); pointer-events: none; white-space: nowrap; letter-spacing: 4px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb; margin-bottom: 20px; }
+    .logo-area { display: flex; flex-direction: column; gap: 4px; }
+    .logo-name { font-size: 22px; font-weight: 700; color: #10b981; letter-spacing: 1px; }
+    .logo-sub { font-size: 11px; color: #6b7280; }
+    .receipt-meta { text-align: right; }
+    .receipt-title { font-size: 16px; font-weight: 700; color: #111827; }
+    .receipt-title-en { font-size: 11px; color: #6b7280; margin-bottom: 6px; }
+    .receipt-number { font-size: 13px; font-weight: 600; color: #10b981; background: #ecfdf5; padding: 3px 10px; border-radius: 20px; border: 1px solid #a7f3d0; display: inline-block; }
+    .status-badge { display: inline-block; margin-top: 6px; padding: 2px 10px; background: #10b981; color: #fff; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .section { margin-bottom: 16px; }
+    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #10b981; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px dashed #d1fae5; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+    .info-item { display: flex; flex-direction: column; gap: 2px; }
+    .info-label { font-size: 10px; color: #9ca3af; }
+    .info-value { font-size: 13px; font-weight: 500; color: #111827; }
+    .route-box { background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+    .route-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .route-start { background: #10b981; }
+    .route-end { background: #ef4444; }
+    .route-line { width: 2px; height: 20px; background: linear-gradient(#10b981, #ef4444); margin: 2px auto; }
+    .route-dots { display: flex; flex-direction: column; align-items: center; }
+    .route-text { flex: 1; }
+    .route-loc { font-size: 13px; font-weight: 600; color: #111827; }
+    .total-box { background: linear-gradient(135deg, #10b981, #059669); border-radius: 10px; padding: 16px 20px; text-align: center; margin: 16px 0; color: #fff; }
+    .total-label { font-size: 12px; opacity: 0.9; margin-bottom: 4px; }
+    .total-amount { font-size: 32px; font-weight: 700; letter-spacing: 1px; }
+    .total-baht { font-size: 16px; opacity: 0.9; }
+    .footer { margin-top: 24px; padding-top: 16px; border-top: 1px dashed #e5e7eb; text-align: center; color: #9ca3af; font-size: 10px; line-height: 1.6; }
+    .footer strong { color: #6b7280; }
+    @media print {
+      body { background: white; padding: 0; }
+      .receipt { box-shadow: none; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="receipt">
+    <div class="watermark">PAID</div>
+    <div class="header">
+      <div class="logo-area">
+        <div class="logo-name">PaiNamNae</div>
+        <div class="logo-sub">บริการรถร่วมเดินทาง</div>
+        <div class="logo-sub">Ride-Sharing Service</div>
+      </div>
+      <div class="receipt-meta">
+        <div class="receipt-title">ใบเสร็จรับเงิน</div>
+        <div class="receipt-title-en">OFFICIAL RECEIPT</div>
+        <div class="receipt-number">${receiptNumber}</div>
+        <div><span class="status-badge">✓ ชำระแล้ว</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">ข้อมูลผู้โดยสาร / Passenger</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">ชื่อ-นามสกุล / Full Name</span>
+          <span class="info-value">${passenger.firstName || user.value?.firstName || '-'} ${passenger.lastName || user.value?.lastName || ''}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">อีเมล / Email</span>
+          <span class="info-value">${passenger.email || user.value?.email || '-'}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">เบอร์โทร / Phone</span>
+          <span class="info-value">${passenger.phoneNumber || user.value?.phoneNumber || '-'}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">เลขที่การจอง / Booking ID</span>
+          <span class="info-value">${payment.bookingId?.substring(0, 12).toUpperCase() || '-'}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">เส้นทาง / Route</div>
+      <div class="route-box">
+        <div class="route-dots">
+          <div class="route-dot route-start"></div>
+          <div class="route-line"></div>
+          <div class="route-dot route-end"></div>
+        </div>
+        <div class="route-text">
+          <div class="route-loc">${startLocation}</div>
+          <div style="font-size:11px;color:#6b7280;margin:4px 0;">↓ ${route.distance || 'N/A'} km · ${route.duration || 'N/A'}</div>
+          <div class="route-loc">${endLocation}</div>
+        </div>
+      </div>
+      <div class="info-grid" style="margin-top:10px">
+        <div class="info-item">
+          <span class="info-label">วันเวลาเดินทาง / Departure</span>
+          <span class="info-value">${formatDateFull(route.departureTime)}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">ราคาต่อที่นั่ง / Price/Seat</span>
+          <span class="info-value">${route.pricePerSeat || 0} บาท</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">ข้อมูลคนขับ / Driver</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">ชื่อคนขับ / Driver Name</span>
+          <span class="info-value">${driver.firstName || 'N/A'} ${driver.lastName || ''}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">ทะเบียนรถ / License Plate</span>
+          <span class="info-value">${driver.licensePlate || '-'}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">การชำระเงิน / Payment</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">ช่องทางชำระ / Method</span>
+          <span class="info-value">${methodDisplay}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">วันที่ยืนยัน / Confirmed At</span>
+          <span class="info-value">${formatDateFull(payment.verifiedAt || payment.updatedAt)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="total-box">
+      <div class="total-label">ยอดรวมที่ชำระ / Total Amount Paid</div>
+      <div><span class="total-amount">${payment.amount?.toLocaleString('th-TH') || '0'}</span> <span class="total-baht">฿ บาทถ้วน</span></div>
+    </div>
+
+    <div class="footer">
+      <strong>PaiNamNae Ride-Sharing</strong><br>
+      เอกสารนี้ออกโดยระบบอัตโนมัติ / This receipt is system-generated<br>
+      วันที่พิมพ์ / Printed: ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+    </div>
+  </div>
+  <script>window.onload = function(){ window.print(); }<\/script>
+</body>
+</html>`
+
+  const win = window.open('', '_blank', 'width=700,height=900')
+  win.document.write(html)
+  win.document.close()
+}
+
+
 
 // Handle payments
 const handleCashPayment = async (cashData) => {
